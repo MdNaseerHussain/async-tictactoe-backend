@@ -4,10 +4,16 @@ const app = express();
 const bcrypt = require('bcrypt');
 const uuid = require('uuid');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 
 app.use(express.json());
+app.use(cors());
 
 let users = [];
+
+app.get('/auth', authenticateToken, (req, res) => {
+    res.status(200).send('Success');
+});
 
 app.get('/users', authenticateToken, (req, res) => {
     res.json(users);
@@ -25,7 +31,7 @@ function authenticateToken(req, res, next) {
 }
 
 app.post('/login', async (req, res) => {
-    const user = users.find(user => user.name === req.body.name);
+    const user = users.find(user => user.username === req.body.username);
     if (user == null) {
         return res.status(400).send('Cannot find user');
     }
@@ -42,15 +48,16 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const user = users.find(user => user.name === req.body.name);
+    const user = users.find(user => user.username === req.body.username);
     if (user != null) {
-        return res.status(400).send('User already exists');
+        return res.status(400).send('Username already exists');
     }
     try {
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const user = { id: uuid.v4(), name: req.body.name, password: hashedPassword };
+        const user = { id: uuid.v4(), name: req.body.name, email: req.body.email, username: req.body.username, password: hashedPassword };
         users.push(user);
-        res.status(201).send('Success');
+        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+        res.status(201).json({ accessToken: accessToken });
     } catch {
         res.status(500).send('Error');
     }
