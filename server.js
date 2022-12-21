@@ -5,19 +5,22 @@ const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+import { connect } from "./database/connect.js";
+import { User } from "./database/schema.js";
 
 app.use(express.json());
 app.use(cors());
 
-let users = [];
+//connect to database
+connect();
 
 app.get("/auth", authenticateToken, (req, res) => {
   res.status(200).send("Success");
 });
 
-app.get("/users", authenticateToken, (req, res) => {
-  res.json(users);
-});
+// app.get("/users", authenticateToken, (req, res) => {
+//   res.json(users);
+// });
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
@@ -31,12 +34,16 @@ function authenticateToken(req, res, next) {
 }
 
 app.post("/login", async (req, res) => {
-  const user = users.find((user) => user.username === req.body.username);
+  //get user from database based on username
+  const user = await User.findOne({
+    username: req.body.username,
+  });
+
   if (user == null) {
     return res.status(400).send("Cannot find user");
   }
   try {
-    if (await bcrypt.compare(req.body.password, user.password)) {
+    if (bcrypt.compare(req.body.password, user.password)) {
       const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
       res.status(200).json({ accessToken: accessToken });
     } else {
@@ -48,7 +55,11 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const user = users.find((user) => user.username === req.body.username);
+  //get user from database based on username
+  const user = await User.findOne({
+    username: req.body.username,
+  });
+
   if (user != null) {
     return res.status(400).send("Username already exists");
   }
@@ -61,7 +72,10 @@ app.post("/register", async (req, res) => {
       username: req.body.username,
       password: hashedPassword,
     };
-    users.push(user);
+    //push user to database
+    const newUser = new User(user);
+    newUser.save();
+
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
     res.status(201).json({ accessToken: accessToken });
   } catch {
