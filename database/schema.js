@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-const uuid = require("uuid");
-
+//create user schema
 const userSchema = new mongoose.Schema({
   id: String,
   name: String,
