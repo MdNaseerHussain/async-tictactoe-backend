@@ -47,6 +47,9 @@ io.use((socket, next) => {
   socket.on("disconnect", () => {
     console.log(`user disconnected: ${socket.user.username}`);
   });
+  socket.on("games page", () => {
+    console.log("Fetching games");
+  });
 });
 
 server.listen(process.env.PORT || 3001, () => {
