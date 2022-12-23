@@ -23,3 +23,5 @@ utilities.js
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+clearGames.mongodb

@@ -9,11 +9,13 @@ const userSchema = new mongoose.Schema({
 });
 
 const gameSchema = new mongoose.Schema({
+  id: String,
   player1: String,
   player2: String,
   board: Array,
   turn: String,
   winner: String,
+  date: Date,
 });
 
 const User = mongoose.model("User", userSchema);

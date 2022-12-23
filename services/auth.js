@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 const jwt = require("jsonwebtoken");
-const User = require("./database/schema.js").User;
+const User = require("../database/schema.js").User;
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -64,4 +64,11 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { authenticateToken, loginUser, registerUser };
+const getUserByEmail = async (email) => {
+  const user = await User.findOne({
+    email: email,
+  }).then((res) => res && res.toJSON());
+  return user;
+};
+
+module.exports = { authenticateToken, loginUser, registerUser, getUserByEmail };
