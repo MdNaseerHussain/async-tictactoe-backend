@@ -34,6 +34,14 @@ const loginUser = async (req, res) => {
 };
 
 const registerUser = async (req, res) => {
+  if (!/^[a-zA-Z0-9]+$/.test(req.body.username)) {
+    return res
+      .status(400)
+      .send("Username must contain only alphanumeric characters");
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+    return res.status(400).send("Invalid email");
+  }
   const user = await User.findOne({
     username: req.body.username,
   }).then((res) => res && res.toJSON());

@@ -15,16 +15,29 @@ const fetchUserGames = async (req, res) => {
   }
 };
 
-const fetchGame = async (id) => {
+const findGameById = async (id) => {
   const games = await Game.find({
     id: id,
   }).then((res) => res && res.map((game) => game.toJSON()));
   return games;
 };
 
+const fetchGame = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const game = await findGameById(id);
+    if (!game || game.length === 0) {
+      return res.status(400).json({ error: "Game not found" });
+    }
+    res.status(200).json({ game: game[0] });
+  } catch (err) {
+    res.send(err);
+  }
+};
+
 const createGame = async (player1, player2) => {
   const gameId = `${player1}-${player2}`;
-  const game = await fetchGame(gameId);
+  const game = await findGameById(gameId);
   if (game && game.length > 0) {
     return { error: "Game already exists" };
   }
@@ -41,26 +54,16 @@ const createGame = async (player1, player2) => {
   return newGame.toJSON();
 };
 
-const updateGame = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { board, turn, winner } = req.body;
-    const game = await fetchGame(id);
-    if (!game || game.length === 0) {
-      return res.status(400).json({ error: "Game not found" });
-    }
-    const updatedGame = await Game.findOneAndUpdate(
-      { id: id },
-      {
-        board: board,
-        turn: turn,
-        winner: winner,
-      }
-    );
-    res.status(200).json({ game: updatedGame.toJSON() });
-  } catch (err) {
-    res.send(err);
+const updateGame = async (id, turn, board, winner) => {
+  const game = await findGameById(id);
+  if (!game || game.length === 0) {
+    return { error: "Game not found" };
   }
+  const updatedGame = await Game.findOneAndUpdate(
+    { id: id },
+    { turn: turn, board: board, winner: winner }
+  );
+  return updatedGame.toJSON();
 };
 
 module.exports = { fetchUserGames, fetchGame, createGame, updateGame };

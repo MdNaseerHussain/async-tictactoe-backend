@@ -12,6 +12,7 @@ const {
 } = require("./services/auth.js");
 const {
   fetchUserGames,
+  fetchGame,
   createGame,
   updateGame,
 } = require("./services/games.js");
@@ -33,7 +34,29 @@ connect();
 app.post("/login", loginUser);
 app.post("/register", registerUser);
 app.get("/games", authenticateToken, fetchUserGames);
-app.get("/game/:id", authenticateToken, updateGame);
+app.get("/game/:id", authenticateToken, fetchGame);
+app.post("/game/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+  const { board, turn, winner } = req.body;
+  const updatedGame = await updateGame(id, board, turn, winner);
+  if (updatedGame.error) {
+    return res.status(400).json({ error: updatedGame.error });
+  }
+  res.status(200).json({ game: updatedGame });
+  sendGameUpdate(updatedGame.player1, id);
+  sendGameUpdate(updatedGame.player2, id);
+});
+app.post("/newgame", authenticateToken, async (req, res) => {
+  const { player1, player2 } = req.body;
+  const game = await createGame(player1, player2);
+  if (game.error) {
+    return res.status(400).json({ error: game.error });
+  }
+  console.log(game);
+  res.status(200).json({ game: game });
+  sendGameUpdate(player1, game.id);
+  sendGameUpdate(player2, game.id);
+});
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -54,39 +77,10 @@ io.use((socket, next) => {
   socket.on("disconnect", () => {
     console.log(`user disconnected: ${socket.user.username}`);
   });
-  socket.on("new game", async (email, callback) => {
-    console.log(`new game request from ${socket.user.username}`);
-    const player1 = socket.user;
-    const player2 = await getUserByEmail(email);
-    if (!player2) {
-      callback({ message: "User not found" });
-      return;
-    }
-    if (player1.username === player2.username) {
-      callback({ message: "Cannot play against yourself" });
-      return;
-    }
-    const game = await createGame(player1.username, player2.username);
-    if (game.error) {
-      callback({ message: game.error });
-      return;
-    }
-    callback({
-      id: game.id,
-      player1: player1.username,
-      player2: player2.username,
-      turn: game.turn,
-      email: player2.email,
-      date: game.date,
-    });
-    sendGameUpdate(player2.username, game.id);
-  });
 });
 
-const sendGameUpdate = (username, gameId) => {
-  io.to(username).emit("game update", {
-    gameId: gameId,
-  });
+const sendGameUpdate = (username, id) => {
+  io.to(username).emit("game update", { id });
 };
 
 server.listen(process.env.PORT || 3001, () => {
