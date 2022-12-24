@@ -8,7 +8,6 @@ const {
   authenticateToken,
   loginUser,
   registerUser,
-  getUserByEmail,
 } = require("./services/auth.js");
 const {
   fetchUserGames,
@@ -22,7 +21,7 @@ const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT"],
   },
 });
 
@@ -35,7 +34,7 @@ app.post("/login", loginUser);
 app.post("/register", registerUser);
 app.get("/games", authenticateToken, fetchUserGames);
 app.get("/game/:id", authenticateToken, fetchGame);
-app.post("/game/:id", authenticateToken, async (req, res) => {
+app.put("/game/:id", authenticateToken, async (req, res) => {
   const id = req.params.id;
   const { board, turn, winner } = req.body;
   const updatedGame = await updateGame(id, board, turn, winner);
@@ -52,7 +51,6 @@ app.post("/newgame", authenticateToken, async (req, res) => {
   if (game.error) {
     return res.status(400).json({ error: game.error });
   }
-  console.log(game);
   res.status(200).json({ game: game });
   sendGameUpdate(player1, game.id);
   sendGameUpdate(player2, game.id);
@@ -72,11 +70,7 @@ io.use((socket, next) => {
     next(new Error("Authentication error"));
   }
 }).on("connection", (socket) => {
-  console.log(`user connected: ${socket.user.username}`);
   socket.join(socket.user.username);
-  socket.on("disconnect", () => {
-    console.log(`user disconnected: ${socket.user.username}`);
-  });
 });
 
 const sendGameUpdate = (username, id) => {

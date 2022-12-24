@@ -36,8 +36,12 @@ const fetchGame = async (req, res) => {
 };
 
 const createGame = async (player1, player2) => {
-  const gameId = `${player1}-${player2}`;
-  const game = await findGameById(gameId);
+  const timestamp = new Date().getTime();
+  const gameId = `${player1}-${player2}-${timestamp}`;
+  const game = await Game.find({
+    id: gameId,
+    winner: "",
+  }).then((res) => res && res.map((game) => game.toJSON()));
   if (game && game.length > 0) {
     return { error: "Game already exists" };
   }
@@ -54,7 +58,7 @@ const createGame = async (player1, player2) => {
   return newGame.toJSON();
 };
 
-const updateGame = async (id, turn, board, winner) => {
+const updateGame = async (id, board, turn, winner) => {
   const game = await findGameById(id);
   if (!game || game.length === 0) {
     return { error: "Game not found" };
