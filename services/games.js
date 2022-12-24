@@ -49,7 +49,11 @@ const createGame = async (player1, player2) => {
     id: gameId,
     player1: player1,
     player2: player2,
-    board: ["", "", "", "", "", "", "", "", ""],
+    board: [
+      ["", "", ""],
+      ["", "", ""],
+      ["", "", ""],
+    ],
     turn: player1,
     winner: "",
     date: new Date(),
@@ -58,11 +62,60 @@ const createGame = async (player1, player2) => {
   return newGame.toJSON();
 };
 
-const updateGame = async (id, board, turn, winner) => {
+const gameOver = (player1, player2, board) => {
+  let turn = "";
+  let winner = "";
+  const winningCombinations = [
+    [board[0][0], board[0][1], board[0][2]],
+    [board[1][0], board[1][1], board[1][2]],
+    [board[2][0], board[2][1], board[2][2]],
+    [board[0][0], board[1][0], board[2][0]],
+    [board[0][1], board[1][1], board[2][1]],
+    [board[0][2], board[1][2], board[2][2]],
+    [board[0][0], board[1][1], board[2][2]],
+    [board[0][2], board[1][1], board[2][0]],
+  ];
+  for (let i = 0; i < winningCombinations.length; i++) {
+    const [a, b, c] = winningCombinations[i];
+    if (a === b && b === c && a !== "") {
+      winner = a;
+      break;
+    }
+  }
+  if (winner === "") {
+    let emptyCells = 0;
+    for (let i = 0; i < board.length; i++) {
+      for (let j = 0; j < board[i].length; j++) {
+        if (board[i][j] === "") {
+          emptyCells++;
+        }
+      }
+    }
+    if (emptyCells === 0) {
+      winner = "draw";
+    }
+  }
+  if (winner === "") {
+    let moves = 0;
+    for (let i = 0; i < board.length; i++) {
+      for (let j = 0; j < board[i].length; j++) {
+        if (board[i][j] !== "") {
+          moves++;
+        }
+      }
+    }
+    turn = moves % 2 === 0 ? player1 : player2;
+  }
+  return { turn: turn, winner: winner };
+};
+
+const updateGame = async (id, board) => {
   const game = await findGameById(id);
   if (!game || game.length === 0) {
     return { error: "Game not found" };
   }
+  const { player1, player2 } = game[0];
+  const { turn, winner } = gameOver(player1, player2, board);
   const updatedGame = await Game.findOneAndUpdate(
     { id: id },
     { turn: turn, board: board, winner: winner }

@@ -36,8 +36,8 @@ app.get("/games", authenticateToken, fetchUserGames);
 app.get("/game/:id", authenticateToken, fetchGame);
 app.put("/game/:id", authenticateToken, async (req, res) => {
   const id = req.params.id;
-  const { board, turn, winner } = req.body;
-  const updatedGame = await updateGame(id, board, turn, winner);
+  const { board } = req.body;
+  const updatedGame = await updateGame(id, board);
   if (updatedGame.error) {
     return res.status(400).json({ error: updatedGame.error });
   }
