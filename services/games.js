@@ -36,6 +36,9 @@ const fetchGame = async (req, res) => {
 };
 
 const createGame = async (player1, player2) => {
+  if (player1 === player2) {
+    return { error: "Cannot play against yourself" };
+  }
   const timestamp = new Date().getTime();
   const gameId = `${player1}-${player2}-${timestamp}`;
   const game = await Game.find({
